@@ -10,24 +10,24 @@ module TicTacToe
       @board = Board.new
       @player1 = Player.new
       @player2 = Player.new
-      @curPlayer = nil
+      @cur_player = nil
 
-      until askForMode
+      until ask_for_mode
         puts '~ Please select one of the modes by typing 1 or 2.'
       end
     end
 
-    def askForMode
+    def ask_for_mode
       puts 'Which game mode would you like?'
       puts '1. Human vs Human'
       puts '2. Human vs Computer'
 
       case gets.chomp
         when '1'
-          startVsHuman
+          start_vs_human
           true
         when '2'
-          startVsComputer
+          start_vs_computer
           true
         else
           false
@@ -35,7 +35,7 @@ module TicTacToe
 
     end
 
-    def startVsHuman
+    def start_vs_human
       puts '~ Human VS Human ~'
 
       puts 'What is your name Player 1?'
@@ -55,19 +55,24 @@ module TicTacToe
       end
       @player2.type = 'O'
 
+      decide_order
+      play_vs_human
+    end
+
+    def decide_order
+
       puts 'Which player will go first? Let\'s find out!'
       puts '*Tosses coin*'
-      @curPlayer = [@player1, @player2].sample
-      puts "#{@curPlayer.name} will go first"
+      @cur_player = [@player1, @player2].sample
+      puts "#{@cur_player.name} will go first"
 
-      runGame
     end
 
-    def changeTurn
-      @curPlayer = (@curPlayer.type == 'X' ? @player2 : @player1)
+    def change_turn
+      @cur_player = (@cur_player.type == 'X' ? @player2 : @player1)
     end
 
-    def startVsComputer
+    def start_vs_computer
       puts '~ Human VS Computer ~'
 
       puts 'What is your name?'
@@ -86,37 +91,53 @@ module TicTacToe
       @player2.name = 'Computer'
       @player2.type = 'O'
 
-      runGame
+      decide_order
+      play_vs_computer
     end
 
-    def runGame
+    def play_vs_computer
 
       loop do
-        takePlayerTurn
-
-        if @board.winCheck(@curPlayer.type)
-          puts "#{curPlayer.name} WINS (Sorry #{@curPlayer.type == 'X' ? @player2.name : @player1.name})"
-          break
-        end
-
-        if @board.drawCheck
-          puts 'You both tied!'
-          break
-        end
-
-        changeTurn
+        @cur_player.type == 'X' ? take_player_turn : @board.take_computer_turn
+        break if check_board
       end
       puts 'Game Over!'
 
     end
 
-    def takePlayerTurn
-      puts "(#{@curPlayer.type}) #{@curPlayer.name}'s turn"
-      @board.display
-      askForRow
+    def play_vs_human
+
+      loop do
+        take_player_turn
+        break if check_board
+      end
+      puts 'Game Over!'
+
     end
 
-    def askForRow
+    def check_board
+
+      if @board.win_check(@cur_player.type)
+        puts "#{cur_player.name} WINS! (Sorry #{@cur_player.type == 'X' ? @player2.name : @player1.name})"
+        return true
+      end
+
+      if @board.draw_check
+        puts 'You both tied!'
+        return true
+      end
+
+      change_turn
+      return false
+    end
+
+    def take_player_turn
+      puts "(#{@cur_player.type}) #{@cur_player.name}'s turn"
+      @board.display
+      ask_for_row
+    end
+
+    def ask_for_row
 
       loop do
         puts 'Which row? (1 - 3)'
@@ -124,7 +145,7 @@ module TicTacToe
 
         case row
           when '1', '2', '3'
-            break if askForColumn(row)
+            break if ask_for_column(row)
           else
             puts 'Not a number between 1 and 3. Try again :('
         end
@@ -132,7 +153,7 @@ module TicTacToe
 
     end
 
-    def askForColumn(row)
+    def ask_for_column(row)
 
       loop do
         puts 'Which column? (1 - 3)'
@@ -141,7 +162,7 @@ module TicTacToe
         case column
           when '1', '2', '3'
             # -1 because users are used to indexes starting at 1, but we need it to start at 0
-            return @board.markCell(row.to_i-1, column.to_i-1, @curPlayer.type)
+            return @board.mark_cell(row.to_i-1, column.to_i-1, @cur_player.type)
           else
             puts 'Not a number between 1 and 3. Try again :('
         end
