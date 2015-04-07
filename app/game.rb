@@ -1,16 +1,17 @@
-require 'app/board'
+#require 'app/board'
 require 'app/player'
+require 'app/computer'
 
 module TicTacToe
   class Game
-    attr_accessor :board, :player1, :player2, :curPlayer
+    attr_accessor :board, :player1, :player2, :current_player
 
     def initialize(params = {})
       puts 'Welcome to Ultimate Totally-Not-Normal Tic Tac Toe'
       @board = Board.new
-      @player1 = Player.new
-      @player2 = Player.new
-      @cur_player = nil
+      @player1 = nil
+      @player2 = nil
+      @current_player = nil
 
       until ask_for_mode
         puts '~ Please select one of the modes by typing 1 or 2.'
@@ -35,41 +36,38 @@ module TicTacToe
 
     end
 
+    def decide_order
+      puts 'Which player will go first? Let\'s find out!'
+      puts '*Tosses coin*'
+      @current_player = [@player1, @player2].sample
+      @board.current_player_type = @current_player.type
+      puts "#{@current_player.name} will go first."
+    end
+
+    def change_turn
+      @current_player = (@current_player.type == 'X' ? @player2 : @player1)
+    end
+
     def start_vs_human
       puts '~ Human VS Human ~'
 
       puts 'What is your name Player 1?'
-      @player1.name = gets.chomp
-      @player1.type = 'X'
+      @player1 = Player.new('X', gets.chomp)
 
       puts 'What is your name Player 2?'
       loop do
         name = gets.chomp
 
         if name != @player1.name
-          @player2.name = name
+          @player2 = Player.new('O', name)
           break
         end
 
         puts 'Can\'t pick same name as Player 1.'
       end
-      @player2.type = 'O'
 
       decide_order
-      play_vs_human
-    end
-
-    def decide_order
-
-      puts 'Which player will go first? Let\'s find out!'
-      puts '*Tosses coin*'
-      @cur_player = [@player1, @player2].sample
-      puts "#{@cur_player.name} will go first"
-
-    end
-
-    def change_turn
-      @cur_player = (@cur_player.type == 'X' ? @player2 : @player1)
+      play { take_player_turn }
     end
 
     def start_vs_computer
@@ -80,72 +78,59 @@ module TicTacToe
         name = gets.chomp
 
         if name != 'Computer'
-          @player1.name = name
+          @player1 = Player.new('X', name)
           break
         end
 
         puts 'Can\'t pick same name as Computer.'
       end
-      @player1.type = 'X'
 
-      @player2.name = 'Computer'
-      @player2.type = 'O'
+      @player2 = Computer.new('O', 'Computer')
 
       decide_order
-      play_vs_computer
+      play { @current_player.type == 'X' ? take_player_turn : @player2.take_computer_turn(@board) }
     end
 
-    def play_vs_computer
-
+    def play
       loop do
-        @cur_player.type == 'X' ? take_player_turn : @board.take_computer_turn
+        yield
         break if check_board
       end
+      @board.show
       puts 'Game Over!'
-
-    end
-
-    def play_vs_human
-
-      loop do
-        take_player_turn
-        break if check_board
-      end
-      puts 'Game Over!'
-
     end
 
     def check_board
 
-      if @board.win_check(@cur_player.type)
-        puts "#{cur_player.name} WINS! (Sorry #{@cur_player.type == 'X' ? @player2.name : @player1.name})"
+      if @board.win?(@current_player.type)
+        puts "#{current_player.name} WINS! (Sorry #{@current_player.type == 'X' ? @player2.name : @player1.name})"
         return true
       end
 
-      if @board.draw_check
+      if @board.draw?
         puts 'You both tied!'
         return true
       end
 
       change_turn
-      return false
+      false
     end
 
     def take_player_turn
-      puts "(#{@cur_player.type}) #{@cur_player.name}'s turn"
-      @board.display
-      ask_for_row
+      puts "(#{@current_player.type}) #{@current_player.name}'s turn"
+      @board.show
+      ask_for_column
     end
 
-    def ask_for_row
+    def ask_for_column
 
       loop do
-        puts 'Which row? (1 - 3)'
-        row = gets.chomp
+        puts 'Which column starting from left? (1 - 3)'
+        column = gets.chomp
 
-        case row
+        case column
           when '1', '2', '3'
-            break if ask_for_column(row)
+            break if ask_for_row(column)
           else
             puts 'Not a number between 1 and 3. Try again :('
         end
@@ -153,16 +138,16 @@ module TicTacToe
 
     end
 
-    def ask_for_column(row)
+    def ask_for_row(column)
 
       loop do
-        puts 'Which column? (1 - 3)'
-        column = gets.chomp
+        puts 'Which row starting from top? (1 - 3)'
+        row = gets.chomp
 
-        case column
+        case row
           when '1', '2', '3'
             # -1 because users are used to indexes starting at 1, but we need it to start at 0
-            return @board.mark_cell(row.to_i-1, column.to_i-1, @cur_player.type)
+            return @board.check_and_mark_cell(column.to_i - 1, row.to_i - 1)
           else
             puts 'Not a number between 1 and 3. Try again :('
         end
