@@ -88,27 +88,28 @@ module TicTacToe
       @player2 = Computer.new('O', 'Computer')
 
       decide_order
+      @player2.first = @current_player.type == @player2
       play { @current_player.type == 'X' ? take_player_turn : @player2.take_computer_turn(@board) }
     end
 
     def play
       loop do
         yield
-        break if check_board
+        break if game_over?
       end
       @board.show
       puts 'Game Over!'
     end
 
-    def check_board
+    def game_over?
 
       if @board.win?(@current_player.type)
-        puts "#{current_player.name} WINS! (Sorry #{@current_player.type == 'X' ? @player2.name : @player1.name})"
+        puts "** #{current_player.name} WINS! (Sorry #{@current_player.type == 'X' ? @player2.name : @player1.name})"
         return true
       end
 
       if @board.draw?
-        puts 'You both tied!'
+        puts '~~ You both tied!'
         return true
       end
 

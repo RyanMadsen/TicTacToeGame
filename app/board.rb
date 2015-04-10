@@ -28,8 +28,8 @@ module TicTacToe
     def check_and_mark_cell(column, row)
 
       if grid[column][row] == ' '
+        puts "Placed #{@current_player_type} at #{[column + 1, row + 1]}"
         mark_cell(column, row)
-        puts "Placed #{current_player_type} at #{[column + 1, row + 1]}"
         true
       else
         puts 'Spot taken. Try again :('
@@ -62,9 +62,11 @@ module TicTacToe
     end
 
     def get_next_board(move)
-      new_board = clone
-      new_board.mark_cell(move[0], move[1])
-      new_board
+      next_board = clone
+      next_board.mark_cell(move[0], move[1])
+      # Check if the player who just went won
+      next_board.win?(@current_player_type == 'X' ? 'O' : 'X')
+      next_board
     end
 
     def over?
